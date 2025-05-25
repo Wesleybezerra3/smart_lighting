@@ -1,4 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
+
+// Exemplo: Ativar Bluetooth e listar dispositivos pareados
+void listarDispositivos() async {
+  // Ativa o Bluetooth (se necessário)
+  await FlutterBluetoothSerial.instance.requestEnable();
+
+  // Lista dispositivos pareados
+  List<BluetoothDevice> devices = await FlutterBluetoothSerial.instance.getBondedDevices();
+  for (var device in devices) {
+    print('Dispositivo: ${device.name} - ${device.address}');
+  }
+}
+
 
 class BluetoothArea extends StatelessWidget {
   const BluetoothArea({super.key});
@@ -11,7 +25,7 @@ class BluetoothArea extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           const Text(
-            'Lâmpada 0F13d Smart',
+            'Nenhum dispositivo conectado',
             style: TextStyle(
               fontFamily: 'Montserrat',
               fontSize: 20,
@@ -25,7 +39,8 @@ class BluetoothArea extends StatelessWidget {
                   const Icon(Icons.add, color: Colors.black),
             ),
             onPressed: () {
-              // Ação do botão
+              // Chama a função para listar dispositivos
+              listarDispositivos();
             },
           ),
         ],

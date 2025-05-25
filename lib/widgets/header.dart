@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 class CustomHeader extends StatelessWidget {
-  const CustomHeader({super.key});
+  final VoidCallback onMenuPressed;
+  const CustomHeader({super.key, required this.onMenuPressed});
+  // Constructor para receber a função de callback
 
   @override
   Widget build(BuildContext context) {
@@ -51,9 +53,7 @@ class CustomHeader extends StatelessWidget {
               errorBuilder: (context, error, stackTrace) =>
                   const Icon(Icons.menu, color: Colors.white),
             ),
-            onPressed: () {
-              // Ação do menu
-            },
+            onPressed: onMenuPressed
           ),
         ],
       ),

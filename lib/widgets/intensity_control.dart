@@ -23,12 +23,12 @@ class _IntensityControlState extends State<IntensityControl> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween, // Espaça os elementos
           children: [
-            // Texto
-            // const Text(
-            //   'Controle de Intensidade',
-            //   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            // ),
-            // Slider e Porcentagem
+             //Texto
+             const Text(
+               'Intensidade',
+               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+             ),
+             //Slider e Porcentagem
             Expanded(
               child: Row(
                 children: [
