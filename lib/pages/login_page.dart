@@ -1,7 +1,43 @@
 import 'package:flutter/material.dart';
+import 'package:smart_lighting/services/api_service.dart';
 
-class LoginPage extends StatelessWidget {
+class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
+
+  @override
+  State<LoginPage> createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
+  final TextEditingController _usernameController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  bool _loading = false;
+
+  void _login() async {
+    setState(() {
+      _loading = true;
+    });
+    try {
+      await ApiService.login(
+        'account/login',
+        {
+          'login': _usernameController.text.trim(),
+          'password': _passwordController.text.trim(),
+        },
+      );
+      if (mounted) {
+        Navigator.pushReplacementNamed(context, '/home');
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Usuário ou senha inválidos'), backgroundColor: Colors.red),
+      );
+    } finally {
+      setState(() {
+        _loading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -20,9 +56,10 @@ class LoginPage extends StatelessWidget {
                 const Text('Entre com sua conta', style: TextStyle(fontSize: 18, color: Colors.white)),
                 const SizedBox(height: 32),
                 TextField(
+                  controller: _usernameController,
                   style: TextStyle(color: Colors.white),
                   decoration: InputDecoration(
-                    labelText: 'E-mail',
+                    labelText: 'Nome de usuário',
                     labelStyle: TextStyle(color: Color(0xFFF6CF1F)),
                     border: OutlineInputBorder(),
                     enabledBorder: OutlineInputBorder(
@@ -37,6 +74,7 @@ class LoginPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 TextField(
+                  controller: _passwordController,
                   obscureText: true,
                   style: TextStyle(color: Colors.white),
                   decoration: InputDecoration(
@@ -57,16 +95,6 @@ class LoginPage extends StatelessWidget {
                 Container(
                   width: double.infinity,
                   height: 48,
-                  // decoration: BoxDecoration(
-                  //   boxShadow: [
-                  //     BoxShadow(
-                  //       color: Colors.black,
-                  //       offset: Offset(4, 6),
-                  //       blurRadius: 0,
-                  //       spreadRadius: 0,
-                  //     ),
-                  //   ],
-                  // ),
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Color(0xFFF6CF1F),
@@ -77,17 +105,24 @@ class LoginPage extends StatelessWidget {
                       elevation: 0,
                       shadowColor: Colors.transparent,
                     ),
-                    onPressed: () {
-                      Navigator.pushNamed(context, '/home');
-                    },
-                    child: const Text(
-                      'Entrar',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF242424),
-                      ),
-                    ),
+                    onPressed: _loading ? null : _login,
+                    child: _loading
+                        ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFF6CF1F)),
+                              strokeWidth: 3,
+                            ),
+                          )
+                        : const Text(
+                            'Entrar',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF242424),
+                            ),
+                          ),
                   ),
                 ),
                 Align(

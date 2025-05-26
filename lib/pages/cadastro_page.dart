@@ -1,4 +1,22 @@
 import 'package:flutter/material.dart';
+import '../services/api_service.dart';
+
+
+class Usuario {
+  final String name;
+  final String login;
+  final String password;
+
+  Usuario({required this.name, required this.login, required this.password});
+
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'login': login,
+      'password': password,
+    };
+  }
+}
 
 class CadastroPage extends StatefulWidget {
   const CadastroPage({super.key});
@@ -9,9 +27,11 @@ class CadastroPage extends StatefulWidget {
 
 class _CadastroPageState extends State<CadastroPage> {
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController _emailController = TextEditingController();
   final TextEditingController _nomeController = TextEditingController();
+  final TextEditingController _loginController = TextEditingController();
   final TextEditingController _senhaController = TextEditingController();
+
+  bool _loading = false;
 
   String? _validateSenha(String? value) {
     if (value == null || value.isEmpty) {
@@ -26,6 +46,37 @@ class _CadastroPageState extends State<CadastroPage> {
       return 'A senha deve conter letras e números';
     }
     return null;
+  }
+
+  Future<void> _cadastrar() async {
+    if (_formKey.currentState!.validate()) {
+      final novoUsuario = Usuario(
+        name: _nomeController.text,
+        login: _loginController.text,
+        password: _senhaController.text,
+      );
+      setState(() {
+        _loading = true;
+      });
+      try {
+        await ApiService.register(
+          context,
+          'account/register',
+          novoUsuario.toJson(),
+        );
+        if (mounted) {
+          Navigator.pushReplacementNamed(context, '/home');
+        }
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Erro ao cadastrar'), backgroundColor: Colors.red),
+        );
+      } finally {
+        setState(() {
+          _loading = false;
+        });
+      }
+    }
   }
 
   @override
@@ -48,29 +99,6 @@ class _CadastroPageState extends State<CadastroPage> {
                   const Text('Preencha os campos abaixo', style: TextStyle(fontSize: 18, color: Colors.white)),
                   const SizedBox(height: 32),
                   TextFormField(
-                    controller: _emailController,
-                    style: const TextStyle(color: Colors.white),
-                    decoration: const InputDecoration(
-                      labelText: 'E-mail',
-                      labelStyle: TextStyle(color: Color(0xFFF6CF1F)),
-                      border: OutlineInputBorder(),
-                      enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Color(0xFFF6CF1F)),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Color(0xFFF6CF1F), width: 2),
-                      ),
-                    ),
-                    cursorColor: Color(0xFFF6CF1F),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Informe o e-mail';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
                     controller: _nomeController,
                     style: const TextStyle(color: Colors.white),
                     decoration: const InputDecoration(
@@ -87,7 +115,30 @@ class _CadastroPageState extends State<CadastroPage> {
                     cursorColor: Color(0xFFF6CF1F),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return 'Informe o nome';
+                        return 'Informe seu nome';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _loginController,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: const InputDecoration(
+                      labelText: 'Nome de usuário',
+                      labelStyle: TextStyle(color: Color(0xFFF6CF1F)),
+                      border: OutlineInputBorder(),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Color(0xFFF6CF1F)),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Color(0xFFF6CF1F), width: 2),
+                      ),
+                    ),
+                    cursorColor: Color(0xFFF6CF1F),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Informe o nome de usuário';
                       }
                       return null;
                     },
@@ -125,21 +176,24 @@ class _CadastroPageState extends State<CadastroPage> {
                         elevation: 0,
                         shadowColor: Colors.transparent,
                       ),
-                      onPressed: () {
-                        if (_formKey.currentState!.validate()) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Cadastro realizado com sucesso!')),
-                          );
-                        }
-                      },
-                      child: const Text(
-                        'Cadastrar',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF242424),
-                        ),
-                      ),
+                      onPressed: _loading ? null : _cadastrar,
+                      child: _loading
+                          ? const SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF242424)),
+                                strokeWidth: 3,
+                              ),
+                            )
+                          : const Text(
+                              'Cadastrar',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF242424),
+                              ),
+                            ),
                     ),
                   ),
                   Align(

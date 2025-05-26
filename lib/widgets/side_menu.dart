@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SideMenu extends StatelessWidget {
   final VoidCallback onClose;
@@ -14,7 +15,7 @@ class SideMenu extends StatelessWidget {
           children: [
             // Menu ocupa metade da tela
             SizedBox(
-              width: MediaQuery.of(context).size.width * 0.6,
+              width: MediaQuery.of(context).size.width * 0.5,
               child: Material(
                 color: Color(0xFF242424),
                 child: Column(
@@ -35,23 +36,40 @@ class SideMenu extends StatelessWidget {
                     const SizedBox(height: 24),
                     ListTile(
                       leading: const Icon(Icons.person, color: Colors.white),
-                      title: const Text('Meu Perfil', style: TextStyle(color: Colors.white)),
+                      title: const Text(
+                        'Meu Perfil',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                      onTap: () {
+                        Navigator.pushNamed(context, '/perfil');
+                        onClose();
+                      },
+                    ),
+                    const SizedBox(height: 24),
+                    ListTile(
+                      leading: const Icon(
+                        Icons.notifications,
+                        color: Colors.white,
+                      ),
+                      title: const Text(
+                        'Logs',
+                        style: TextStyle(color: Colors.white),
+                      ),
                       onTap: () {
                         Navigator.pushNamed(context, '/logs');
                         onClose();
                       },
                     ),
+                    const SizedBox(height: 24),
                     ListTile(
-                      leading: const Icon(Icons.notifications, color: Colors.white),
-                      title: const Text('Logs', style: TextStyle(color: Colors.white)),
-                      onTap: () {
-                        Navigator.pushNamed(context, '/logs');
-                        onClose();
-                      },
-                    ),
-                    ListTile(
-                      leading: const Icon(Icons.assignment, color: Colors.white),
-                      title: const Text('Registros', style: TextStyle(color: Colors.white)),
+                      leading: const Icon(
+                        Icons.assignment,
+                        color: Colors.white,
+                      ),
+                      title: const Text(
+                        'Registros',
+                        style: TextStyle(color: Colors.white),
+                      ),
                       onTap: () {
                         Navigator.pushNamed(context, '/logs');
                         onClose();
@@ -59,9 +77,18 @@ class SideMenu extends StatelessWidget {
                     ),
                     const Spacer(),
                     ListTile(
-                      leading: const Icon(Icons.logout, color: Colors.white),
-                      title: const Text('Sair', style: TextStyle(color: Colors.white)),
-                      onTap: () {
+                      leading: const Icon(
+                        Icons.logout,
+                        color: Color(0xFFF6CF1F),
+                      ),
+                      title: const Text(
+                        'Sair',
+                        style: TextStyle(color: Color(0xFFF6CF1F)),
+                      ),
+                      onTap: () async {
+                        final prefs = await SharedPreferences.getInstance();
+                        await prefs.remove('token');
+                        await prefs.remove('token_expiry');
                         Navigator.pushNamed(context, '/login');
                         onClose();
                       },
