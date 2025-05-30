@@ -105,17 +105,17 @@ class _LoginPageState extends State<LoginPage> {
                       elevation: 0,
                       shadowColor: Colors.transparent,
                     ),
-                    onPressed: _loading ? null : _login,
-                    child: _loading
-                        ? const SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(
-                              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFF6CF1F)),
-                              strokeWidth: 3,
-                            ),
-                          )
-                        : const Text(
+                    onPressed: (){Navigator.pushNamed(context, '/home');},//_loading ? null : _login,
+                    child:  //_loading
+                    //     ? const SizedBox(
+                    //         width: 24,
+                    //         height: 24,
+                    //         child: CircularProgressIndicator(
+                    //           valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFF6CF1F)),
+                    //           strokeWidth: 3,
+                    //         ),
+                    //       )
+                        const Text(
                             'Entrar',
                             style: TextStyle(
                               fontSize: 18,

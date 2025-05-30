@@ -182,7 +182,7 @@ class _CadastroPageState extends State<CadastroPage> {
                               width: 24,
                               height: 24,
                               child: CircularProgressIndicator(
-                                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF242424)),
+                                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFF6CF1F)),
                                 strokeWidth: 3,
                               ),
                             )

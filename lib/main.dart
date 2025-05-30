@@ -5,6 +5,7 @@ import 'pages/login_page.dart';
 import 'pages/cadastro_page.dart';
 import 'pages/home_page.dart';
 import 'pages/logs_page.dart';
+import 'pages/registers_page.dart';
 import 'pages/perfil_page.dart';
 
 class StartupPage extends StatefulWidget {
@@ -54,6 +55,7 @@ void main() {
       '/cadastro': (context) => const CadastroPage(),
       '/home': (context) => const HomePage(),
       '/logs': (context) => const LogsPage(),
+      '/registers': (context) => const RegistersPage(),
       '/perfil': (context) => const PerfilPage(),
     },
   ));

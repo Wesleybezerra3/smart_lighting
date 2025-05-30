@@ -71,7 +71,7 @@ class SideMenu extends StatelessWidget {
                         style: TextStyle(color: Colors.white),
                       ),
                       onTap: () {
-                        Navigator.pushNamed(context, '/logs');
+                        Navigator.pushNamed(context, '/registers');
                         onClose();
                       },
                     ),

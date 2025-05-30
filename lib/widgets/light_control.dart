@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:smart_lighting/widgets/bluetoothArea.dart';
 
 class LightControl extends StatefulWidget {
   const LightControl({super.key});
@@ -9,6 +10,18 @@ class LightControl extends StatefulWidget {
 
 class _LightControlState extends State<LightControl> {
   bool _isLightOn = false;
+
+  void _toggleLight() {
+    setState(() {
+      _isLightOn = !_isLightOn;
+    });
+    // Envia comando Bluetooth se conectado
+    final bluetooth = BluetoothArea.of(context);
+    if (bluetooth != null) {
+      // Envia apenas o comando 'T' (sem JSON)
+      bluetooth.sendBluetoothCommand('T');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,11 +45,7 @@ class _LightControlState extends State<LightControl> {
         ),
         const SizedBox(height: 16),
         GestureDetector(
-          onTap: () {
-            setState(() {
-              _isLightOn = !_isLightOn; // Alterna entre ligado e desligado
-            });
-          },
+          onTap: _toggleLight,
           child: Container(
             width: 300,
             height: 300,

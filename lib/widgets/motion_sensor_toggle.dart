@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:smart_lighting/widgets/bluetoothArea.dart';
 
 class MotionSensorToggle extends StatefulWidget {
   const MotionSensorToggle({super.key});
@@ -9,6 +10,16 @@ class MotionSensorToggle extends StatefulWidget {
 
 class _MotionSensorToggleState extends State<MotionSensorToggle> {
   bool _isSensorOn = false;
+
+  void _toggleSensor(bool value) {
+    setState(() {
+      _isSensorOn = value;
+    });
+    final bluetooth = BluetoothArea.of(context);
+    if (bluetooth != null) {
+       bluetooth.sendBluetoothCommand('S');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,11 +44,7 @@ class _MotionSensorToggleState extends State<MotionSensorToggle> {
               value: _isSensorOn,
               activeColor: const Color(0xFF000000),
               inactiveThumbColor: const Color(0xFF0A0A0A),
-              onChanged: (value) {
-                setState(() {
-                  _isSensorOn = value;
-                });
-              },
+              onChanged: _toggleSensor,
             ),
           ],
         ),

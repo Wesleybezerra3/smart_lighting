@@ -58,4 +58,13 @@ class ApiService {
       throw Exception('Erro ao registrar usuário');
     }
   }
+
+  static Future<void> sendLog(Map<String, dynamic> log) async {
+    final url = Uri.parse('$baseUrl/logs');
+    await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(log),
+    );
+  }
 }
