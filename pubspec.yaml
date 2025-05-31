@@ -30,7 +30,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  flutter_bluetooth_serial: ^0.4.0
+  flutter_bluetooth_serial:
+    path: plugins/flutter_bluetooth_serial
   http: ^1.2.1
   shared_preferences: ^2.2.2
 
