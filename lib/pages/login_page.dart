@@ -18,19 +18,19 @@ class _LoginPageState extends State<LoginPage> {
       _loading = true;
     });
     try {
-      await ApiService.login(
-        'account/login',
-        {
-          'login': _usernameController.text.trim(),
-          'password': _passwordController.text.trim(),
-        },
-      );
+      await ApiService.login('account/login', {
+        'login': _usernameController.text.trim(),
+        'password': _passwordController.text.trim(),
+      });
       if (mounted) {
         Navigator.pushReplacementNamed(context, '/home');
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Usuário ou senha inválidos'), backgroundColor: Colors.red),
+        const SnackBar(
+          content: Text('Usuário ou senha inválidos'),
+          backgroundColor: Colors.red,
+        ),
       );
     } finally {
       setState(() {
@@ -51,9 +51,19 @@ class _LoginPageState extends State<LoginPage> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Bem vindo', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white)),
+                const Text(
+                  'Bem vindo',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
                 const SizedBox(height: 8),
-                const Text('Entre com sua conta', style: TextStyle(fontSize: 18, color: Colors.white)),
+                const Text(
+                  'Entre com sua conta',
+                  style: TextStyle(fontSize: 18, color: Colors.white),
+                ),
                 const SizedBox(height: 32),
                 TextField(
                   controller: _usernameController,
@@ -66,7 +76,10 @@ class _LoginPageState extends State<LoginPage> {
                       borderSide: BorderSide(color: Color(0xFFF6CF1F)),
                     ),
                     focusedBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Color(0xFFF6CF1F), width: 2),
+                      borderSide: BorderSide(
+                        color: Color(0xFFF6CF1F),
+                        width: 2,
+                      ),
                     ),
                     focusColor: Color(0xFFF6CF1F),
                   ),
@@ -85,7 +98,10 @@ class _LoginPageState extends State<LoginPage> {
                       borderSide: BorderSide(color: Color(0xFFF6CF1F)),
                     ),
                     focusedBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Color(0xFFF6CF1F), width: 2),
+                      borderSide: BorderSide(
+                        color: Color(0xFFF6CF1F),
+                        width: 2,
+                      ),
                     ),
                     focusColor: Color(0xFFF6CF1F),
                   ),
@@ -105,24 +121,29 @@ class _LoginPageState extends State<LoginPage> {
                       elevation: 0,
                       shadowColor: Colors.transparent,
                     ),
-                    onPressed: (){Navigator.pushNamed(context, '/home');},//_loading ? null : _login,
-                    child:  //_loading
-                    //     ? const SizedBox(
-                    //         width: 24,
-                    //         height: 24,
+                    onPressed: () {
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        Navigator.pushReplacementNamed(context, '/home');
+                      });
+                    },
+                    // _loading ? null : _login,
+                    // child:  _loading
+                    //      ? const SizedBox(
+                    //          width: 24,
+                    //          height: 24,
                     //         child: CircularProgressIndicator(
-                    //           valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFF6CF1F)),
-                    //           strokeWidth: 3,
-                    //         ),
-                    //       )
-                        const Text(
-                            'Entrar',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF242424),
-                            ),
-                          ),
+                    //            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFF6CF1F)),
+                    //            strokeWidth: 3,
+                    //          ),
+                    //        )
+                    child: const Text(
+                      'Entrar',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF242424),
+                      ),
+                    ),
                   ),
                 ),
                 Align(
@@ -131,7 +152,10 @@ class _LoginPageState extends State<LoginPage> {
                     onPressed: () {
                       Navigator.pushNamed(context, '/cadastro');
                     },
-                    child: const Text('Não tem conta? Cadastre-se', style: TextStyle(color: Color(0xFFF6CF1F))),
+                    child: const Text(
+                      'Não tem conta? Cadastre-se',
+                      style: TextStyle(color: Color(0xFFF6CF1F)),
+                    ),
                   ),
                 ),
               ],

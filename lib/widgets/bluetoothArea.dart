@@ -1,21 +1,10 @@
 import 'dart:convert';
 import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
+import 'package:permission_handler/permission_handler.dart' as perm;
+
 import '../services/api_service.dart';
-
-// Exemplo: Ativar Bluetooth e listar dispositivos pareados
-void listarDispositivos() async {
-  // Ativa o Bluetooth (se necessário)
-  await FlutterBluetoothSerial.instance.requestEnable();
-
-  // Lista dispositivos pareados
-  List<BluetoothDevice> devices = await FlutterBluetoothSerial.instance.getBondedDevices();
-  for (var device in devices) {
-    print('Dispositivo: ${device.name} - ${device.address}');
-  }
-}
 
 class BluetoothArea extends StatefulWidget {
   const BluetoothArea({super.key});
@@ -35,27 +24,47 @@ class _BluetoothAreaState extends State<BluetoothArea> {
   String? _lastMessage;
 
   Future<void> _showBluetoothModal(BuildContext context) async {
-    await FlutterBluetoothSerial.instance.requestEnable();
-    List<BluetoothDevice> devices = await FlutterBluetoothSerial.instance.getBondedDevices();
-    showModalBottomSheet(
-      context: context,
-      builder: (context) {
-        return Container(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text('Dispositivos Bluetooth Pareados', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-              const SizedBox(height: 16),
-              if (devices.isEmpty)
-                const Text('Nenhum dispositivo encontrado.')
-              else
-                ...devices.map((device) => ListTile(
+    try {
+      // Solicita permissões necessárias
+      await perm.Permission.bluetoothScan.request();
+      await perm.Permission.bluetoothConnect.request();
+      await perm.Permission.location.request();
+
+      // Ativa o Bluetooth
+      await FlutterBluetoothSerial.instance.requestEnable();
+
+      // Obtém dispositivos pareados
+      List<BluetoothDevice> devices = await FlutterBluetoothSerial.instance.getBondedDevices();
+
+      if (!context.mounted) return;
+
+      showModalBottomSheet(
+        context: context,
+        builder: (context) {
+          return Container(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Dispositivos Bluetooth Pareados',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                ),
+                const SizedBox(height: 16),
+                if (devices.isEmpty)
+                  const Text('Nenhum dispositivo encontrado.')
+                else
+                  ...devices.map(
+                    (device) => ListTile(
                       leading: const Icon(Icons.bluetooth, color: Color(0xFFF6CF1F)),
                       title: Text(device.name ?? 'Sem nome'),
                       subtitle: Text(device.address),
                       onTap: () async {
-                        Navigator.pop(context); // Fecha o modal
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Conectando...'), duration: Duration(seconds: 2)),
+                        );
+
                         try {
                           BluetoothConnection connection = await BluetoothConnection.toAddress(device.address);
                           setState(() {
@@ -63,6 +72,12 @@ class _BluetoothAreaState extends State<BluetoothArea> {
                             _connected = true;
                             _deviceName = device.name ?? device.address;
                           });
+
+                          _connection!.input!.listen((Uint8List data) {
+                            final message = String.fromCharCodes(data).trim();
+                            _handleArduinoMessage(message);
+                          });
+
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(content: Text('Conectado a ${device.name ?? device.address}'), backgroundColor: Colors.green),
                           );
@@ -72,23 +87,29 @@ class _BluetoothAreaState extends State<BluetoothArea> {
                           );
                         }
                       },
-                    )),
-            ],
-          ),
+                    ),
+                  ),
+              ],
+            ),
+          );
+        },
+      );
+    } catch (e) {
+      debugPrint('Erro ao exibir modal Bluetooth: $e');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro: $e'), backgroundColor: Colors.red),
         );
-      },
-    );
+      }
+    }
   }
 
   void sendBluetoothCommand(String command, [bool? value]) async {
     if (_connection != null && _connection!.isConnected) {
-      // Se value for null, envia só o comando puro
-      if (value == null) {
-        _connection!.output.add(Uint8List.fromList(command.codeUnits));
-      } else {
-        // Se value não for null, envia comando + valor (exemplo: 'T1' ou 'T0')
-        _connection!.output.add(Uint8List.fromList((command + (value ? '1' : '0')).codeUnits));
-      }
+      String finalCommand = (value == null)
+          ? '$command\n'
+          : '$command${value ? '1' : '0'}\n';
+      _connection!.output.add(Uint8List.fromList(finalCommand.codeUnits));
       await _connection!.output.allSent;
     }
   }
@@ -101,23 +122,37 @@ class _BluetoothAreaState extends State<BluetoothArea> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Arduino: $message')),
       );
-      // Envia log para a API
       try {
-        await ApiService.sendLog({'acao': message, 'data': DateTime.now().toIso8601String()});
-      } catch (e) {
-        // Opcional: mostrar erro ao enviar log
+        await ApiService.sendLog({
+          'acao': message,
+          'data': DateTime.now().toIso8601String(),
+        });
+      } catch (_) {
+        // Ignora erro de envio de log
+      }
+    }
+  }
+
+  void disconnect({bool showSnackbar = true}) {
+    _connection?.close();
+    if (mounted) {
+      setState(() {
+        _connection = null;
+        _connected = false;
+        _deviceName = '';
+      });
+      if (showSnackbar) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Desconectado do dispositivo'), backgroundColor: Colors.orange),
+        );
       }
     }
   }
 
   @override
-  void initState() {
-    super.initState();
-    // Escuta mensagens recebidas do Arduino
-    _connection?.input?.listen((Uint8List data) {
-      final message = String.fromCharCodes(data).trim();
-      _handleArduinoMessage(message);
-    });
+  void dispose() {
+    _connection?.close();
+    super.dispose();
   }
 
   @override
@@ -127,12 +162,15 @@ class _BluetoothAreaState extends State<BluetoothArea> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            _connected ? 'Conectado: $_deviceName' : 'Nenhum dispositivo conectado',
-            style: const TextStyle(
-              fontFamily: 'Montserrat',
-              fontSize: 20,
-              fontWeight: FontWeight.w800,
+          Expanded(
+            child: Text(
+              _connected ? 'Conectado: $_deviceName' : 'Nenhum dispositivo conectado',
+              style: const TextStyle(
+                fontFamily: 'Montserrat',
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+              ),
+              overflow: TextOverflow.ellipsis,
             ),
           ),
           IconButton(
@@ -142,6 +180,7 @@ class _BluetoothAreaState extends State<BluetoothArea> {
                   const Icon(Icons.add, color: Colors.black),
             ),
             onPressed: () {
+              debugPrint('Botão pressionado');
               _showBluetoothModal(context);
             },
           ),

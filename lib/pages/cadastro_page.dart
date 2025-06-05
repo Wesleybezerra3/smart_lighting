@@ -4,14 +4,21 @@ import '../services/api_service.dart';
 
 class Usuario {
   final String name;
+  final String email;
   final String login;
   final String password;
 
-  Usuario({required this.name, required this.login, required this.password});
+  Usuario({
+    required this.name,
+    required this.email,
+    required this.login,
+    required this.password,
+  });
 
   Map<String, dynamic> toJson() {
     return {
       'name': name,
+      'email': email,
       'login': login,
       'password': password,
     };
@@ -28,6 +35,7 @@ class CadastroPage extends StatefulWidget {
 class _CadastroPageState extends State<CadastroPage> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _nomeController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
   final TextEditingController _loginController = TextEditingController();
   final TextEditingController _senhaController = TextEditingController();
 
@@ -52,6 +60,7 @@ class _CadastroPageState extends State<CadastroPage> {
     if (_formKey.currentState!.validate()) {
       final novoUsuario = Usuario(
         name: _nomeController.text,
+        email:_emailController.text,
         login: _loginController.text,
         password: _senhaController.text,
       );
@@ -72,6 +81,23 @@ class _CadastroPageState extends State<CadastroPage> {
           const SnackBar(content: Text('Erro ao cadastrar'), backgroundColor: Colors.red),
         );
       } finally {
+        // void sendMovements() async{
+        //   try{
+        //       await ApiService.register(
+        //         context,
+        //         'movements/register',
+        //         {
+        //           'type': 'register',
+        //           'userId': novoUsuario.login,
+        //           'description': 'Cadastro de usuário',
+        //         },
+        //       );
+        //   }catch(e){
+        //     ScaffoldMessenger.of(context).showSnackBar(
+        //       SnackBar(content: Text('Erro ao registrar operação: $e'), backgroundColor: Colors.red),
+        //     );
+        //   }
+        // }
         setState(() {
           _loading = false;
         });
@@ -116,6 +142,29 @@ class _CadastroPageState extends State<CadastroPage> {
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Informe seu nome';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                   TextFormField(
+                    controller: _emailController,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: const InputDecoration(
+                      labelText: 'Email',
+                      labelStyle: TextStyle(color: Color(0xFFF6CF1F)),
+                      border: OutlineInputBorder(),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Color(0xFFF6CF1F)),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Color(0xFFF6CF1F), width: 2),
+                      ),
+                    ),
+                    cursorColor: Color(0xFFF6CF1F),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Informe seu email';
                       }
                       return null;
                     },
