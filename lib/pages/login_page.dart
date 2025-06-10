@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:smart_lighting/services/api_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -13,18 +14,45 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _passwordController = TextEditingController();
   bool _loading = false;
 
+  Future<void> getUserData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+    if (token != null) {
+      await ApiService.getMe(token);
+    } else {
+      Navigator.pushReplacementNamed(context, '/login');
+    }
+  }
+
+  Future<void> sendRegister() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+    final nome = prefs.getString('nome');
+    print('Token: $token');
+    print('Nome: $nome');
+
+    if (token != null && nome != null && nome.isNotEmpty) {
+      await ApiService.sendRegisters(
+          {"tipo": 'L', "descricao": 'Novo login realizado por $nome'}, token);
+    } else {
+      print('Nome ou token não encontrados ao tentar enviar registro.');
+    }
+  }
+
   void _login() async {
     setState(() {
       _loading = true;
     });
+
     try {
       await ApiService.login('account/login', {
         'login': _usernameController.text.trim(),
         'password': _passwordController.text.trim(),
       });
-      if (mounted) {
-        Navigator.pushReplacementNamed(context, '/home');
-      }
+
+      await getUserData(); // Salva o nome no SharedPreferences
+      await sendRegister(); // Usa o nome salvo
+      Navigator.pushReplacementNamed(context, '/home');
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -67,8 +95,8 @@ class _LoginPageState extends State<LoginPage> {
                 const SizedBox(height: 32),
                 TextField(
                   controller: _usernameController,
-                  style: TextStyle(color: Colors.white),
-                  decoration: InputDecoration(
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(
                     labelText: 'Nome de usuário',
                     labelStyle: TextStyle(color: Color(0xFFF6CF1F)),
                     border: OutlineInputBorder(),
@@ -89,8 +117,8 @@ class _LoginPageState extends State<LoginPage> {
                 TextField(
                   controller: _passwordController,
                   obscureText: true,
-                  style: TextStyle(color: Colors.white),
-                  decoration: InputDecoration(
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(
                     labelText: 'Senha',
                     labelStyle: TextStyle(color: Color(0xFFF6CF1F)),
                     border: OutlineInputBorder(),
@@ -108,12 +136,12 @@ class _LoginPageState extends State<LoginPage> {
                   cursorColor: Color(0xFFF6CF1F),
                 ),
                 const SizedBox(height: 24),
-                Container(
+                SizedBox(
                   width: double.infinity,
                   height: 48,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Color(0xFFF6CF1F),
+                      backgroundColor: const Color(0xFFF6CF1F),
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
@@ -121,29 +149,25 @@ class _LoginPageState extends State<LoginPage> {
                       elevation: 0,
                       shadowColor: Colors.transparent,
                     ),
-                    onPressed: () {
-                      WidgetsBinding.instance.addPostFrameCallback((_) {
-                        Navigator.pushReplacementNamed(context, '/home');
-                      });
-                    },
-                    // _loading ? null : _login,
-                    // child:  _loading
-                    //      ? const SizedBox(
-                    //          width: 24,
-                    //          height: 24,
-                    //         child: CircularProgressIndicator(
-                    //            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFF6CF1F)),
-                    //            strokeWidth: 3,
-                    //          ),
-                    //        )
-                    child: const Text(
-                      'Entrar',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF242424),
-                      ),
-                    ),
+                    onPressed: _loading ? null : _login,
+                    child: _loading
+                        ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                  Color(0xFFF6CF1F)),
+                              strokeWidth: 3,
+                            ),
+                          )
+                        : const Text(
+                            'Entrar',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF242424),
+                            ),
+                          ),
                   ),
                 ),
                 Align(

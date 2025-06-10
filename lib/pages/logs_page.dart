@@ -1,16 +1,63 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:smart_lighting/services/api_service.dart';
+import 'package:intl/intl.dart';
 
-class LogsPage extends StatelessWidget {
+class LogsPage extends StatefulWidget {
   const LogsPage({super.key});
+
+  @override
+  State<LogsPage> createState() => _LogsPageState();
+}
+
+class _LogsPageState extends State<LogsPage> {
+  var logs = [];
+
+  @override
+  void initState() {
+    super.initState();
+    getLogs();
+  }
+
+  void getLogs() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+      final response = await ApiService.getLog(token);
+      setState(() {
+        logs = response;
+      });
+      print(response);
+    } catch (e) {
+      print('Erro ao buscar logs: $e');
+    }
+  }
+
+  String formatarDataHora(String dataIso, String hora) {
+    try {
+      final data = DateTime.parse(dataIso);
+      final partesHora = hora.split(':');
+
+      final dataHora = DateTime(
+        data.year,
+        data.month,
+        data.day,
+        int.parse(partesHora[0]),
+        int.parse(partesHora[1]),
+        int.parse(partesHora[2]),
+      );
+
+      final dataFormatada = DateFormat('dd/MM/yyyy').format(dataHora);
+      final horaFormatada = DateFormat('HH:mm').format(dataHora);
+      return '$dataFormatada às $horaFormatada';
+    } catch (e) {
+      return '$dataIso $hora';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     // Exemplo de lista de logs
-    final logs = [
-      {'acao': 'Luz Ligada por sensor', 'data': '22/05/2025 18:30'},
-      {'acao': 'Luz Desligada manualmente', 'data': '22/05/2025 19:00'},
-      {'acao': 'Luz Ligada manualmente', 'data': '22/05/2025 20:10'},
-    ];
 
     return Scaffold(
       appBar: AppBar(title: const Text('Logs do Sistema')),
@@ -29,12 +76,15 @@ class LogsPage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Ação: ${log['acao']}',
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white),
+                    'Ação: ${log['ds_reg']}',
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                        color: Colors.white),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Data: ${log['data']}',
+                    'Data: ${formatarDataHora(log['dt_acao'], log['hr_acao'])}',
                     style: const TextStyle(color: Colors.yellow, fontSize: 14),
                   ),
                 ],

@@ -20,7 +20,7 @@ class _HomePageState extends State<HomePage> {
   @override
   bool _showMenu = false;
 
-  void initState(){
+  void initState() {
     super.initState();
     getUserData();
   }
@@ -29,6 +29,7 @@ class _HomePageState extends State<HomePage> {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
     if (token != null) {
+      print(token);
       await ApiService.getMe(token);
     } else {
       // Se não houver token, redireciona para a página de login
@@ -48,6 +49,10 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  final GlobalKey<BluetoothAreaState> bluetoothAreaKey = GlobalKey<
+      BluetoothAreaState>(); //erro aqui(The name 'BluetoothAreaState' isn't a type, so it can't be used as a type argument.
+//'dynamic' doesn't conform to the bound 'State<StatefulWidget>' of the type parameter 'T'.)
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -57,7 +62,7 @@ class _HomePageState extends State<HomePage> {
             Column(
               children: [
                 CustomHeader(onMenuPressed: _toggleMenu),
-                const BluetoothArea(),
+                BluetoothArea(key: bluetoothAreaKey),
                 const SizedBox(height: 40),
                 Expanded(
                   child: SingleChildScrollView(
@@ -66,11 +71,11 @@ class _HomePageState extends State<HomePage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          const LightControl(),
+                          LightControl(bluetoothKey: bluetoothAreaKey),
                           const SizedBox(height: 40),
-                          const IntensityControl(),
+                          IntensityControl(bluetoothKey: bluetoothAreaKey),
                           const SizedBox(height: 16),
-                          const MotionSensorToggle(),
+                          MotionSensorToggle(bluetoothKey: bluetoothAreaKey),
                           const SizedBox(height: 16),
                         ],
                       ),

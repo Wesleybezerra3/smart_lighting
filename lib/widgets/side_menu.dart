@@ -1,9 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:smart_lighting/services/api_service.dart';
 
 class SideMenu extends StatelessWidget {
   final VoidCallback onClose;
   const SideMenu({super.key, required this.onClose});
+
+  Future<void> sendRegister() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+    final nome = prefs.getString('nome');
+    print('Token: $token');
+    print('Nome: $nome');
+
+    if (token != null && nome != null && nome.isNotEmpty) {
+      await ApiService.sendRegisters(
+          {"tipo": 'L', "descricao": 'Novo Logout realizado por $nome'}, token);
+    } else {
+      print('Nome ou token não encontrados ao tentar enviar registro.');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -87,8 +103,8 @@ class SideMenu extends StatelessWidget {
                       ),
                       onTap: () async {
                         final prefs = await SharedPreferences.getInstance();
-                        await prefs.remove('token');
-                        await prefs.remove('token_expiry');
+                        prefs.clear();
+                        await sendRegister();
                         Navigator.pushNamed(context, '/login');
                         onClose();
                       },

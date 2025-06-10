@@ -23,7 +23,6 @@ class _StartupPageState extends State<StartupPage> {
   }
 
   Future<void> _checkToken() async {
-     Navigator.pushReplacementNamed(context, '/home');
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
     final expiry = prefs.getInt('token_expiry');
@@ -34,7 +33,7 @@ class _StartupPageState extends State<StartupPage> {
       // Remove token se expirado ou não existir
       await prefs.remove('token');
       await prefs.remove('token_expiry');
-      Navigator.pushReplacementNamed(context, '/home');
+      Navigator.pushReplacementNamed(context, '/login');
     }
   }
 
@@ -61,3 +60,20 @@ void main() {
     },
   ));
 }
+
+// void main() {
+//   runApp(MaterialApp(
+//     debugShowCheckedModeBanner: false,
+//     initialRoute: '/home', // 👈 Vai direto pra Home
+//     routes: {
+//       '/': (context) =>
+//           const HomePage(), // ou pode deixar StartupPage aqui se quiser
+//       // '/login': (context) => const LoginPage(),
+//       '/cadastro': (context) => const CadastroPage(),
+//       '/home': (context) => const HomePage(),
+//       '/logs': (context) => const LogsPage(),
+//       '/registers': (context) => const RegistersPage(),
+//       '/perfil': (context) => const PerfilPage(),
+//     },
+//   ));
+// }

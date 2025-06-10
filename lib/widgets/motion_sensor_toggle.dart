@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:smart_lighting/widgets/bluetoothArea.dart';
+import '../services/api_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class MotionSensorToggle extends StatefulWidget {
-  const MotionSensorToggle({super.key});
+  final GlobalKey<BluetoothAreaState> bluetoothKey;
+  const MotionSensorToggle({super.key, required this.bluetoothKey});
 
   @override
   _MotionSensorToggleState createState() => _MotionSensorToggleState();
@@ -11,20 +14,33 @@ class MotionSensorToggle extends StatefulWidget {
 class _MotionSensorToggleState extends State<MotionSensorToggle> {
   bool _isSensorOn = false;
 
-  void _toggleSensor(bool value) {
+  void _toggleSensor(bool value) async {
     setState(() {
       _isSensorOn = value;
     });
-    final bluetooth = BluetoothArea.of(context);
+    final bluetooth = widget.bluetoothKey.currentState;
     if (bluetooth != null) {
-       bluetooth.sendBluetoothCommand('S');
+      bluetooth.sendBluetoothCommand('S');
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final token = prefs.getString('token');
+        final id = prefs.getString('id');
+        await ApiService.sendLog({
+          "id": 0,
+          'tipo': 'I',
+          'descricao': _isSensorOn ? 'Sensor Ativado' : 'Sensor Desativado',
+        }, token);
+      } catch (_) {
+        // Ignora erro de envio de log
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0), // Espaçamento lateral
+      padding:
+          const EdgeInsets.symmetric(horizontal: 16.0), // Espaçamento lateral
       child: Container(
         padding: const EdgeInsets.all(16.0), // Espaçamento interno
         decoration: BoxDecoration(
@@ -32,7 +48,8 @@ class _MotionSensorToggleState extends State<MotionSensorToggle> {
           borderRadius: BorderRadius.circular(8.0), // Bordas arredondadas
         ),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween, // Espaça os elementos
+          mainAxisAlignment:
+              MainAxisAlignment.spaceBetween, // Espaça os elementos
           children: [
             // Texto
             const Text(

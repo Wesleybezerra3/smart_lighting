@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:smart_lighting/widgets/bluetoothArea.dart';
+import '../services/api_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LightControl extends StatefulWidget {
-  const LightControl({super.key});
+  final GlobalKey<BluetoothAreaState>
+      bluetoothKey; //erro aqui(The name 'BluetoothAreaState' isn't a type, so it can't be used as a type argument.)
+  const LightControl({super.key, required this.bluetoothKey});
 
   @override
   _LightControlState createState() => _LightControlState();
@@ -11,15 +15,31 @@ class LightControl extends StatefulWidget {
 class _LightControlState extends State<LightControl> {
   bool _isLightOn = false;
 
-  void _toggleLight() {
+  void _toggleLight() async {
     setState(() {
       _isLightOn = !_isLightOn;
     });
-    // Envia comando Bluetooth se conectado
-    final bluetooth = BluetoothArea.of(context);
+
+    final bluetooth = widget.bluetoothKey.currentState;
     if (bluetooth != null) {
-      // Envia apenas o comando 'T' (sem JSON)
-      bluetooth.sendBluetoothCommand('T');
+      final command = 'T';
+      bluetooth.sendBluetoothCommand(command);
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final token = prefs.getString('token');
+
+        await ApiService.sendLog({
+          "id": 0,
+          'tipo': 'I',
+          'descricao': _isLightOn
+              ? 'Luz Ligada manulamente'
+              : 'Luz Desligada manualmente',
+        }, token);
+      } catch (_) {
+        // Ignora erro de envio de log
+      }
+    } else {
+      return;
     }
   }
 

@@ -4,20 +4,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
 import 'package:permission_handler/permission_handler.dart' as perm;
 
-import '../services/api_service.dart';
-
 class BluetoothArea extends StatefulWidget {
   const BluetoothArea({super.key});
 
-  static _BluetoothAreaState? of(BuildContext context) {
-    return context.findAncestorStateOfType<_BluetoothAreaState>();
+  static BluetoothAreaState? of(BuildContext context) {
+    return context.findAncestorStateOfType<BluetoothAreaState>();
   }
 
   @override
-  State<BluetoothArea> createState() => _BluetoothAreaState();
+  State<BluetoothArea> createState() => BluetoothAreaState();
 }
 
-class _BluetoothAreaState extends State<BluetoothArea> {
+class BluetoothAreaState extends State<BluetoothArea> {
   BluetoothConnection? _connection;
   bool _connected = false;
   String _deviceName = '';
@@ -25,72 +23,103 @@ class _BluetoothAreaState extends State<BluetoothArea> {
 
   Future<void> _showBluetoothModal(BuildContext context) async {
     try {
+      setState(() {
+        _connected = false; // Opcional: redefinir estado antes
+      });
+
       // Solicita permissões necessárias
-      await perm.Permission.bluetoothScan.request();
-      await perm.Permission.bluetoothConnect.request();
-      await perm.Permission.location.request();
+      await [
+        perm.Permission.bluetoothScan,
+        perm.Permission.bluetoothConnect,
+        perm.Permission.location
+      ].request();
 
       // Ativa o Bluetooth
       await FlutterBluetoothSerial.instance.requestEnable();
 
-      // Obtém dispositivos pareados
-      List<BluetoothDevice> devices = await FlutterBluetoothSerial.instance.getBondedDevices();
-
       if (!context.mounted) return;
 
+      // Mostra modal com loading inicial
       showModalBottomSheet(
         context: context,
         builder: (context) {
-          return Container(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  'Dispositivos Bluetooth Pareados',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-                ),
-                const SizedBox(height: 16),
-                if (devices.isEmpty)
-                  const Text('Nenhum dispositivo encontrado.')
-                else
-                  ...devices.map(
-                    (device) => ListTile(
-                      leading: const Icon(Icons.bluetooth, color: Color(0xFFF6CF1F)),
-                      title: Text(device.name ?? 'Sem nome'),
-                      subtitle: Text(device.address),
-                      onTap: () async {
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Conectando...'), duration: Duration(seconds: 2)),
-                        );
-
-                        try {
-                          BluetoothConnection connection = await BluetoothConnection.toAddress(device.address);
-                          setState(() {
-                            _connection = connection;
-                            _connected = true;
-                            _deviceName = device.name ?? device.address;
-                          });
-
-                          _connection!.input!.listen((Uint8List data) {
-                            final message = String.fromCharCodes(data).trim();
-                            _handleArduinoMessage(message);
-                          });
-
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Conectado a ${device.name ?? device.address}'), backgroundColor: Colors.green),
-                          );
-                        } catch (e) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Erro ao conectar: $e'), backgroundColor: Colors.red),
-                          );
-                        }
-                      },
+          return FutureBuilder<List<BluetoothDevice>>(
+            future: FlutterBluetoothSerial.instance.getBondedDevices(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Padding(
+                  padding: EdgeInsets.all(20),
+                  child: Center(child: CircularProgressIndicator()),
+                );
+              } else if (snapshot.hasError) {
+                return Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text('Erro ao buscar dispositivos: ${snapshot.error}'),
+                );
+              } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                return const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Text('Nenhum dispositivo pareado encontrado.'),
+                );
+              } else {
+                final devices = snapshot.data!;
+                return ListView(
+                  padding: const EdgeInsets.all(16),
+                  shrinkWrap: true,
+                  children: [
+                    const Text(
+                      'Dispositivos Bluetooth Pareados',
+                      style:
+                          TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                     ),
-                  ),
-              ],
-            ),
+                    const SizedBox(height: 16),
+                    ...devices.map(
+                      (device) => ListTile(
+                        leading: const Icon(Icons.bluetooth,
+                            color: Color(0xFFF6CF1F)),
+                        title: Text(device.name ?? 'Sem nome'),
+                        subtitle: Text(device.address),
+                        onTap: () async {
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Conectando...')),
+                          );
+
+                          try {
+                            final connection =
+                                await BluetoothConnection.toAddress(
+                                    device.address);
+                            setState(() {
+                              _connection = connection;
+                              _connected = true;
+                              _deviceName = device.name ?? device.address;
+                            });
+
+                            _connection!.input!.listen((Uint8List data) {
+                              final message = String.fromCharCodes(data).trim();
+                              _handleArduinoMessage(message);
+                            });
+
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                  content: Text(
+                                      'Conectado a ${device.name ?? device.address}'),
+                                  backgroundColor: Colors.green),
+                            );
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                  content: Text('Erro ao conectar: $e'),
+                                  backgroundColor: Colors.red),
+                            );
+                          }
+                        },
+                      ),
+                    ),
+                  ],
+                );
+              }
+            },
           );
         },
       );
@@ -104,13 +133,21 @@ class _BluetoothAreaState extends State<BluetoothArea> {
     }
   }
 
-  void sendBluetoothCommand(String command, [bool? value]) async {
+  void sendBluetoothCommand(String command) async {
     if (_connection != null && _connection!.isConnected) {
-      String finalCommand = (value == null)
-          ? '$command\n'
-          : '$command${value ? '1' : '0'}\n';
-      _connection!.output.add(Uint8List.fromList(finalCommand.codeUnits));
+      // Aqui a mensagem é só o caractere desejado, sem \n ou \r
+      final List<int> bytes = utf8.encode(command); // ou command.codeUnits
+      _connection!.output.add(Uint8List.fromList(bytes));
       await _connection!.output.allSent;
+      debugPrint('✅ Comando enviado via Bluetooth: $command');
+    } else {
+      debugPrint('⚠️ Bluetooth não está conectado');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Bluetooth não está conectado'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -122,14 +159,6 @@ class _BluetoothAreaState extends State<BluetoothArea> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Arduino: $message')),
       );
-      try {
-        await ApiService.sendLog({
-          'acao': message,
-          'data': DateTime.now().toIso8601String(),
-        });
-      } catch (_) {
-        // Ignora erro de envio de log
-      }
     }
   }
 
@@ -143,7 +172,9 @@ class _BluetoothAreaState extends State<BluetoothArea> {
       });
       if (showSnackbar) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Desconectado do dispositivo'), backgroundColor: Colors.orange),
+          const SnackBar(
+              content: Text('Desconectado do dispositivo'),
+              backgroundColor: Colors.orange),
         );
       }
     }
@@ -164,7 +195,9 @@ class _BluetoothAreaState extends State<BluetoothArea> {
         children: [
           Expanded(
             child: Text(
-              _connected ? 'Conectado: $_deviceName' : 'Nenhum dispositivo conectado',
+              _connected
+                  ? 'Conectado: $_deviceName'
+                  : 'Nenhum dispositivo conectado',
               style: const TextStyle(
                 fontFamily: 'Montserrat',
                 fontSize: 20,
